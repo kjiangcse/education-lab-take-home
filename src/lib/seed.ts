@@ -91,7 +91,7 @@ const RAW_SEED_CHATS: Chat[] = [
   // SCRIPTED_DEMO_MESSAGES['demo-restructure'] below, one turn at a time.
   {
     id: 'demo-restructure',
-    title: 'Scenario 1',
+    title: 'Scenario 1: Trim to learner tasks',
     messages: [],
   },
 
@@ -100,7 +100,7 @@ const RAW_SEED_CHATS: Chat[] = [
   // SCRIPTED_DEMO_MESSAGES['demo-blooms'] below, one turn at a time.
   {
     id: 'demo-blooms',
-    title: 'Scenario 2',
+    title: "Scenario 2: Lift to Apply on Bloom's",
     messages: [],
   },
 
