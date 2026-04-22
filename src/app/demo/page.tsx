@@ -1,9 +1,7 @@
 import { redirect } from 'next/navigation'
-import { VISIBLE_SLIDES } from '@/lib/demo/slides'
 
-// /demo entry — kick to the first visible slide, falling back to the live v1
-// prototype when nothing is visible (the deck slides are currently hidden).
+// /demo entry — funnel to the /new landing. Slides and scenario deep-links
+// are intentionally closed off so the reviewer always lands on one surface.
 export default function DemoIndex() {
-  const first = VISIBLE_SLIDES[0]?.id
-  redirect(first ? `/demo/${first}` : '/demo/v1')
+  redirect('/new')
 }

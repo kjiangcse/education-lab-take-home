@@ -4,18 +4,8 @@
  * `applyFeedbackToLesson` so the state transition stays in one place.
  */
 
-import type { Lesson, LessonBlock, SectionFeedback, TextEdit } from './types/lesson'
-
-/** Replace each edit's `original` with its `replacement` once, case-insensitive,
- *  matching the existing LessonPreview behavior. */
-function applyEditsToString(source: string, edits: TextEdit[]): string {
-  let out = source
-  for (const edit of edits) {
-    const escaped = edit.original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    out = out.replace(new RegExp(escaped, 'i'), edit.replacement)
-  }
-  return out
-}
+import type { Lesson, LessonBlock, SectionFeedback } from './types/lesson'
+import { applyEditsToHtml as applyEditsToString } from './format-edits'
 
 function patchRichtext(
   block: Extract<LessonBlock, { kind: 'richtext' }>,

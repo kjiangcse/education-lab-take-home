@@ -19,7 +19,7 @@ function isDemoChatId(id: string): boolean {
   return id.startsWith('demo-')
 }
 import { DEFAULT_MODEL, MODELS, streamChat, type Model } from './api'
-import { parseEditsFromText, applyEditsToLesson } from './edit-parser'
+import { parseEditsFromText, attachEditsAsFeedback, hasFeedbackTargets } from './edit-parser'
 import { useLesson } from './lesson-context'
 import { DEMO_TURNS } from './demo-scenario'
 import { applyFeedbacksToLesson } from './lesson-edits'
@@ -96,6 +96,24 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const demoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const demoIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  // Refs so commitAssistant/runCompletion always read the LATEST lesson state
+  // at call time, not the state captured when the callback closure was built.
+  // Without this, an in-flight turn that switches lessons mid-stream (via
+  // get_lesson tool → openPanel) commits the message with the old lesson id,
+  // and every inline card inside it resolves against the wrong lesson.
+  const lessonRef = useRef(lesson)
+  const lessonsRef = useRef(lessons)
+  const lessonIdRef = useRef(lessonId)
+  const courseRef = useRef(course)
+  const viewRef = useRef(view)
+  const overlayByChatRef = useRef(overlayByChat)
+  lessonRef.current = lesson
+  lessonsRef.current = lessons
+  lessonIdRef.current = lessonId
+  courseRef.current = course
+  viewRef.current = view
+  overlayByChatRef.current = overlayByChat
+
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (stored === null) {
@@ -144,20 +162,37 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ? events.map((e) => ({ ...e, status: 'done' as const }))
       : undefined
 
-    // Bind the reply to the lesson that was active when it committed so inline
-    // cards keep pointing at that lesson's fields even if the user navigates.
-    const turnLessonId = lesson?.id
-    // Freeze the lesson too: the cards this message embeds (diffs, edited
-    // dropdowns) should render the state Claude was looking at, not whatever
-    // the lesson looks like after the user clicks Apply on pending feedback.
-    const lessonSnapshot = lesson
-    // Capture full right-panel state so exports can replay the session.
+    // Read lesson/course/etc. through refs so an in-flight turn that swapped
+    // lessons mid-stream commits with the CURRENT lesson, not whatever was
+    // captured when this callback was first built. Without this, tool-driven
+    // lesson switches (get_lesson → openPanel) lose their effect on commit.
+    const currentLesson = lessonRef.current
+    const currentCourse = courseRef.current
+    const currentLessons = lessonsRef.current
+    const currentLessonId = lessonIdRef.current
+    const currentView = viewRef.current
+    const currentOverlayByChat = overlayByChatRef.current
+
+    const turnLessonId = currentLesson?.id
+
+    // Parse edit blocks BEFORE snapshotting. The message's frozen lesson must
+    // include the pending feedback the reply just proposed — otherwise the
+    // {{{card:diff:ID}}} artifacts in the message resolve against the pre-attach
+    // state and render "No proposed edits" even though the right panel shows
+    // them. Cards render the state Claude WAS describing, which includes its
+    // own proposals.
+    const edits = parseEditsFromText(text)
+    const patchedLesson = (edits.length > 0 && currentLesson)
+      ? attachEditsAsFeedback(currentLesson, edits)
+      : currentLesson
+
+    const lessonSnapshot = patchedLesson
     const stateSnapshot: TurnStateSnapshot = {
-      course,
-      lessons,
-      lessonId,
-      view,
-      overlay: overlayByChat[chatId],
+      course: currentCourse,
+      lessons: currentLessons,
+      lessonId: currentLessonId,
+      view: currentView,
+      overlay: currentOverlayByChat[chatId],
       timestamp: Date.now(),
     }
 
@@ -169,13 +204,18 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       ),
     )
 
-    // Parse edit blocks from Claude's response and apply to the current lesson.
-    const edits = parseEditsFromText(text)
-    if (edits.length > 0 && lesson) {
-      const patched = applyEditsToLesson(lesson, edits)
-      actions.updateLesson(lesson.id, patched)
+    // Push the patched lesson into the shared store so the right panel, the
+    // Bloom's overlay, and subsequent turns see the attached feedback. Auto-
+    // switch the overlay to Feedback so proposals are visible the moment they
+    // land — but only when at least one edit targets a block/item (scalars
+    // and objectives apply directly and don't use the feedback surface).
+    if (edits.length > 0 && currentLesson && patchedLesson) {
+      actions.updateLesson(currentLesson.id, patchedLesson)
+      if (hasFeedbackTargets(edits)) {
+        actions.setOverlay(chatId, 'feedback')
+      }
     }
-  }, [lesson, course, lessons, lessonId, view, overlayByChat, actions])
+  }, [actions])
 
   const reset = useCallback(() => {
     setThinking(false)

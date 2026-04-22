@@ -12,11 +12,15 @@ export default function NewChat() {
   const router = useRouter()
 
   const handleSend = (text: string) => {
-    // Point the lesson studio at the starter's lesson so the right panel
-    // lands on the content the demo is about — regardless of whether the
-    // user used the starter verbatim or typed their own variation.
-    actions.navigateToLesson(DEMO_STARTER.lesson_id)
+    // Create the chat first, then seed ITS lesson state. `navigateToLesson`
+    // mutates the currently-active chat; calling it before `createChat`
+    // returns is a no-op (nothing is active yet), which would leave the new
+    // chat on the course's default lesson — and any card the AI emits for a
+    // block that only lives in the starter's lesson would render as
+    // "Artifact unavailable". `openPanel` targets a specific chatId so the
+    // new chat starts on the right lesson.
     const id = createChat(text)
+    actions.openPanel({ chatId: id, lessonId: DEMO_STARTER.lesson_id })
     router.push(`/chat/${id}`)
   }
 

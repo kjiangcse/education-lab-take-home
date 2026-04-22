@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { buildLessonReviewPrompt, getBaseRegister } from '@/lib/skills/build-prompt'
-import { TOOL_DEFINITIONS, executeTool, type ToolInput } from '@/lib/tools/definitions'
+import { TOOL_DEFINITIONS, executeTool, type ToolInput, type ToolContext } from '@/lib/tools/definitions'
 import type { Course } from '@/lib/types/course'
 import type { Lesson } from '@/lib/types/lesson'
 
@@ -99,12 +99,15 @@ export async function POST(req: Request) {
             break
           }
 
-          // Execute tools (all reads → safe to run in parallel).
+          // Execute tools (all reads → safe to run in parallel). Pass the
+          // in-flight lesson+course so audits and assembly see the current
+          // state, not just the seed.
+          const toolContext: ToolContext = { currentLesson: lesson, currentCourse: course }
           const toolResults = toolUses.map((tu) => {
             send('tool_call', { id: tu.id, name: tu.name, input: tu.input })
             let result: unknown
             try {
-              result = executeTool(tu.name, tu.input)
+              result = executeTool(tu.name, tu.input, toolContext)
             } catch (err) {
               result = { error: 'execution_failed', message: String(err) }
             }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   AssistantBody,
@@ -22,7 +22,7 @@ import {
   SCRIPTED_DEMO_MESSAGES,
 } from '@/lib/seed'
 import { downloadConversationBundle } from '@/lib/download-conversation'
-import { DEMO_TURNS } from '@/lib/demo-scenario'
+import { collectReferencedIds } from '@/lib/demo/referenced-ids'
 
 type ChatViewProps = {
   chatId: string
@@ -106,6 +106,21 @@ export function ChatView({ chatId, redirectOnMissing = true }: ChatViewProps) {
   const canAdvanceScript =
     isScriptedDemo && scriptedTurnsPlayed < scriptedTurnsTotal && !demoBusy && !isStreaming
 
+  // Right-panel feedback overlay is scoped to blocks Claude has actually
+  // referenced in the chat so far. For scripted demos this means edits on
+  // sections not yet walked through stay hidden until their turn plays. A
+  // null set means "no gating" — used for non-scripted chats so their
+  // feedback behavior is unchanged.
+  const revealedFeedbackIds = useMemo<Set<string> | null>(() => {
+    if (!isScriptedDemo) return null
+    const ids = new Set<string>()
+    for (const m of chat?.messages ?? []) {
+      if (m.role !== 'assistant') continue
+      collectReferencedIds(m.text).forEach((id) => ids.add(id))
+    }
+    return ids
+  }, [isScriptedDemo, chat?.messages])
+
   // Follow streaming content and new messages — keep the newest bubble in view.
   // Fires on intra-chat updates (streaming tokens, thinking flicker, new turns).
   useEffect(() => {
@@ -160,14 +175,6 @@ export function ChatView({ chatId, redirectOnMissing = true }: ChatViewProps) {
               editHistory: actions.getHistory(),
             })
           }}
-          onDemo={() => advanceDemo(chatId)}
-          demoDisabled={
-            demoBusy ||
-            (demoTurnByChatId[chatId] ?? 0) >=
-              (SCRIPTED_DEMO_MESSAGES[chatId]
-                ? Math.floor(SCRIPTED_DEMO_MESSAGES[chatId].length / 2)
-                : DEMO_TURNS.length)
-          }
         />
 
         <div ref={scrollRef} className="scroll-area flex-1 overflow-y-auto overflow-x-hidden pt-6">
@@ -187,33 +194,6 @@ export function ChatView({ chatId, redirectOnMissing = true }: ChatViewProps) {
                 onClick={() => advanceDemo(chatId)}
                 label={scriptedTurnsPlayed === 0 ? 'Start demo' : 'Next turn'}
               />
-            )}
-
-            {chatId === 'demo-blooms' && (
-              <ClaudeMessage>
-                <BloomTaxonomy
-                  title="Lesson 2: Design Thinking for Internal Tools"
-                  level="apply"
-                  distribution={{
-                    remember: 100,
-                    understand: 85,
-                    apply: 40,
-                    analyze: 10,
-                    evaluate: 0,
-                    create: 0,
-                  }}
-                  notes={{
-                    remember: '12 sections covering terminology and core concepts — solid foundation.',
-                    understand: '9 explainer passages with embedded comprehension checks.',
-                    apply: '2 practice scenarios. Room to deepen with more real-world cases.',
-                    analyze: '3 sections tagged Analyze, but only 1 has an Analyze-tier task. Possible mismatch.',
-                    evaluate: 'No Evaluate-tier content. Learning objective 3 calls for evaluation — gap.',
-                    create: 'No Create-tier content. Not required by stated objectives.',
-                  }}
-                  summary="PATTERN: Stated/Actual Mismatch — Your objective says 'apply design thinking framework' but content delivers primarily at Understand. Learners will finish able to describe the framework, not use it."
-                  defaultView="coverage"
-                />
-              </ClaudeMessage>
             )}
 
             {chatId === 'demo-skills' && scriptComplete && (
@@ -243,7 +223,7 @@ export function ChatView({ chatId, redirectOnMissing = true }: ChatViewProps) {
               </ClaudeMessage>
             )}
 
-            {chatId === 'demo-closing' && (
+            {chatId === 'demo-closing' && scriptComplete && (
               <ClaudeMessage>
                 <BloomTaxonomy
                   title="Course: Building Better Internal Tools with Claude"
@@ -311,7 +291,9 @@ export function ChatView({ chatId, redirectOnMissing = true }: ChatViewProps) {
         </div>
       </div>
 
-      {showLessonPanel && <LessonPreview lesson={lesson} chatId={chatId} />}
+      {showLessonPanel && (
+        <LessonPreview lesson={lesson} chatId={chatId} revealedFeedbackIds={revealedFeedbackIds} />
+      )}
     </div>
   )
 }

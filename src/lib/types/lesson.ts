@@ -173,16 +173,24 @@ export function findTabItem(
   return undefined
 }
 
-/** Parse an id like "objective-0" and return the addressed objective.
+/** Parse an id like "objective-1" and return the addressed objective.
  *  Objectives are a flat string[] on the lesson, so they don't belong to a
- *  block — but the card syntax treats each one as addressable for diffs. */
+ *  block — but the card syntax treats each one as addressable.
+ *
+ *  IDs are 1-based, matching the `section-1` / `dropdown-1` / `tab-1`
+ *  convention for every other element type. `objective-1` → first objective
+ *  (array index 0), `objective-4` → fourth objective (array index 3). The
+ *  `objectives[N]` edit-field syntax stays 0-based because that's literal
+ *  array indexing, not an id. */
 export function findObjectiveById(
   lesson: Lesson,
   id: string,
 ): { index: number; text: string } | undefined {
   const match = id.match(/^objective-(\d+)$/)
   if (!match) return undefined
-  const index = Number(match[1])
+  const n = Number(match[1])
+  if (n < 1) return undefined
+  const index = n - 1
   const text = lesson.objectives[index]
   if (text === undefined) return undefined
   return { index, text }

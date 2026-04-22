@@ -11,7 +11,7 @@ export const CANNED_RESPONSE =
   "This is a scaffolded response. The real Claude API isn't wired up yet — this text is just streaming in to demonstrate the thinking spark and the message flow.\n\nYou can replace this with a real API call, or edit the seeded chats in the source to prototype different conversation shapes."
 
 // IDs that get the right-side Lesson Studio panel
-export const LESSON_CHAT_IDS = new Set(['demo-artifacts', 'demo-blooms', 'demo-structure', 'demo-skills'])
+export const LESSON_CHAT_IDS = new Set(['demo-artifacts', 'demo-structure', 'demo-skills'])
 
 /** Chats whose right-panel should open to the course view by default — used
  *  by the closing slide to demo what course-level review looks like. */
@@ -35,7 +35,7 @@ export const COURSE_LEVEL_CHAT_IDS = new Set(['demo-closing'])
  * obvious material to work with without being a dumpster fire.
  */
 export const DEMO_STARTER = {
-  message: "Can you review my draft of \"Workflow Integration & Adoption\"? Just wrapped the first pass and I think it's close, but a couple of things feel loose — the last objective and the video section in particular. Want to see where you'd push back before I ship it.",
+  message: "I want \"Workflow Integration & Adoption\" to land at Apply on Bloom's — learners should actually be choosing surfaces and diagnosing adoption failures, not just reading about them. Can you audit where each section actually sits on the taxonomy and tell me whether the lesson hits Apply, or if I'm fooling myself?",
   lesson_id: 'l4',
 }
 
@@ -43,7 +43,6 @@ export const DEMO_STARTER = {
 export const DEMO_CHAT_LESSON_MAP: Record<string, string> = {
   'demo-artifacts': 'l2', // artifact showcase — l2 has all section types + feedback
   'demo-structure': 'l1', // knowledge dump faults
-  'demo-blooms': 'l2',    // instructional design faults
   'demo-skills': 'l3',    // feature-describer faults
 }
 
@@ -82,31 +81,7 @@ const RAW_SEED_CHATS: Chat[] = [
       },
       {
         role: 'assistant',
-        text: "Here's every artifact the chat can render inline, grounded in **Lesson 2**. Each artifact reuses the same component the right panel uses, so chat-side previews stay visually consistent with the live lesson.\n\n### 1. Rich text section\n\nAddressed by id — same `RichTextViewer` the lesson studio renders.\n\n{{{card:section-1}}}\n\n### 2. Dropdown (clean)\n\nOne dropdown item by id. Same `ExpandableDropdown` component the right panel uses.\n\n{{{card:dropdown-1}}}\n\n### 3. Dropdown (with proposed edits)\n\nWhen a dropdown has `feedback.edits`, heading and content render with strikethrough-old + green-new inline. The surrounding content stays visible but **fades out** toward the edges so the edit sits in the visual spotlight.\n\n{{{card:dropdown-2}}}\n\n### 4. Dropdown group (mixed edits)\n\nA single marker can render the whole group — all items, or a subset by item id. Each one renders clean or edited based on its own `feedback`.\n\n{{{card:dropdowns-1}}}\n\n### 5. Tabbed gallery (with edits)\n\nTabs with `feedback.edits` get an **UPDATED** pill so changes are scannable without clicking through. When a tab title has an edit, the button shows strikethrough-old stacked above new-title. Content renders inline strikeout/replacement when the active tab has edits.\n\n{{{card:tabs-1}}}\n\n### 6. Bloom's pyramid (single tier)\n\nFlags the cognitive level of a piece of content. Click a tier to preview, auto-resets after 5s.\n\n{{{bloom:apply}}}\n\n### 7. Section edit preview (spotlight)\n\n`card:diff:ID` renders the whole section with edits inline. Paragraphs above the first edit and below the last edit fade toward the outer edge — context stays readable but the edited span holds focus. If the edit is at the start or end of the section, that side stays solid (nothing to fade into).\n\n{{{card:diff:section-1}}}\n\nAnd a two-edit case from the framework section:\n\n{{{card:diff:section-2}}}\n\n### 8. Learner journey (course-level)\n\n`{{{journey}}}` renders a course-wide workflow rail: each stage a learner moves through, mapped to the lesson(s) that address it. Stages without a lesson render as dashed **Gap** pills so coverage holes are visible at a glance. Unlike the Bloom's pyramid (cognitive-tier coverage) or section cards (content), this artifact shows *workflow* coverage — does every phase of the journey from noticing friction to shipping a tool have a lesson behind it.\n\n{{{journey}}}\n\nBuilt for course-level review. Default rendering uses the five-lesson arc from this course; props are set up so later work can feed in any stage list.\n\n---\n\nThat's the full marker inventory. The feedback overlay, Bloom's coverage bars, and undo stack are still panel-only affordances (not yet marker-driven).",
-      },
-    ],
-  },
-
-  // ── Demo: Bloom's Alignment & Instructional Design (Lesson 2) ─────────
-  {
-    id: 'demo-blooms',
-    title: "Demo: Bloom's Alignment & Objectives",
-    messages: [
-      {
-        role: 'user',
-        text: "I'm currently working on \"Design Thinking for Internal Tools\" and I just finished the intro and the framework section. Something feels off but I can't quite figure out what. Could you take a look and tell me if it's ready or if it still needs work?",
-      },
-      {
-        role: 'assistant',
-        text: "## Lesson Review: Introduction & Core Framework\n\n### What's working\n\n- **Strong opening claim.** \"Internal tools fail because they're built from requirements documents instead of observed behavior\" names the failure mode before introducing the framework. That earns the reader's attention.\n- **Specific framework.** The compressed design thinking approach — shadow, frame as a verb, prototype the riskiest assumption — is actionable, not abstract.\n\n### What needs attention\n\n**The introduction uses \"requirements documents\"** which is abstract. The learner who's never written a requirements doc won't feel the tension. Ground it in something they've experienced — a ticket, a Slack request, a meeting where someone said *\"we need a dashboard.\"*\n\n**The core framework presents three techniques as a list, not a sequence.** It's currently at the **Apply** level on Bloom's taxonomy, which matches your objectives. But a learner finishes reading and knows *what* to do — not *when* to do each step or *how they connect*.\n\n> **Suggested fix:** Add a brief worked example — a single workflow problem taken through all three steps — to move from \"here are three techniques\" to \"here's how they compose into a process.\"\n\n{{{bloom:apply}}}\n\nTo push toward **Analyze**: after the worked example, ask learners to identify which step would change most if the internal tool were for a different team.",
-      },
-      {
-        role: 'user',
-        text: "ok that makes sense, ill ground the intro in something more real like a slack message. what about the dropdowns though, are those good? the shadow template and the problem framing one and the prototype checklist",
-      },
-      {
-        role: 'assistant',
-        text: "## Dropdown Analysis\n\nThe dropdowns are well-structured but doing different cognitive work than their labels suggest. That's an opportunity.\n\n### Shadow Session Template → Apply ✓ (could bridge to Analyze)\n\nCorrectly labeled — it's a procedural guide. But it could do more. Add a **\"what to do with what you observed\"** section at the end:\n\n1. What workaround did you see most often?\n2. What did the person do *manually* that could be automated?\n3. What's the gap between what they *said* the problem was and what you *observed*?\n\nThose three questions bridge from following a template to *interpreting observations*.\n\n### Problem Framing Exercise → Analyze ✓\n\nYour strongest dropdown. Taking a noun-framed request and reframing it as a verb genuinely requires decomposition. The three worked examples will be critical — learners need to see the reframing done before they try it.\n\n### Prototype Scoping Checklist → Evaluate ⚠\n\n\"Identify your riskiest assumption\" is genuinely Evaluate-level — it requires weighing multiple factors against criteria. But the current description is thin:\n\n> *\"decide in under a day whether to proceed or pivot\"*\n\nNeeds more scaffolding: **What criteria should they use to decide?** What does \"pivot\" actually look like for an internal tool? A two-sentence addition on decision criteria would make this genuinely Evaluate-level rather than aspirationally so.",
+        text: "Here's every artifact the chat can render inline, grounded in **Lesson 2**. Each artifact reuses the same component the right panel uses, so chat-side previews stay visually consistent with the live lesson.\n\n### 1. Rich text section\n\nAddressed by id — same `RichTextViewer` the lesson studio renders.\n\n{{{card:section-1}}}\n\n### 2. Dropdown (clean)\n\nOne dropdown item by id. Same `ExpandableDropdown` component the right panel uses.\n\n{{{card:dropdown-1}}}\n\n### 3. Dropdown (with proposed edits)\n\nWhen a dropdown has `feedback.edits`, heading and content render with strikethrough-old + green-new inline. The surrounding content stays visible but **fades out** toward the edges so the edit sits in the visual spotlight.\n\n{{{card:dropdown-2}}}\n\n### 4. Dropdown group (mixed edits)\n\nA single marker can render the whole group — all items, or a subset by item id. Each one renders clean or edited based on its own `feedback`.\n\n{{{card:dropdowns-1}}}\n\n### 5. Tabbed gallery (with edits)\n\nTabs with `feedback.edits` get an **UPDATED** pill so changes are scannable without clicking through. When a tab title has an edit, the button shows strikethrough-old stacked above new-title. Content renders inline strikeout/replacement when the active tab has edits.\n\n{{{card:tabs-1}}}\n\n### 6. Bloom's pyramid (single tier)\n\nFlags the cognitive level of a piece of content. Click a tier to preview, auto-resets after 5s.\n\n{{{bloom:apply}}}\n\n### 7. Section edit preview (spotlight)\n\n`card:diff:ID` renders the whole section with edits inline. Paragraphs above the first edit and below the last edit fade toward the outer edge — context stays readable but the edited span holds focus. If the edit is at the start or end of the section, that side stays solid (nothing to fade into).\n\n{{{card:diff:section-1}}}\n\nAnd a two-edit case from the framework section:\n\n{{{card:diff:section-2}}}\n\n### 8. Learner journey (course-level)\n\nRenders a course-wide workflow rail: each stage a learner moves through, mapped to the lesson(s) that address it. Stages without a lesson render as dashed **Gap** pills so coverage holes are visible at a glance. Unlike the Bloom's pyramid (cognitive-tier coverage) or section cards (content), this artifact shows *workflow* coverage — does every phase of the journey from noticing friction to shipping a tool have a lesson behind it.\n\n{{{journey}}}\n\nBuilt for course-level review. Default rendering uses the five-lesson arc from this course; props are set up so later work can feed in any stage list.\n\n### 9. Objective / content alignment matrix\n\nRenders the constructive-alignment view practitioners actually reach for: one row per objective, with the tier the objective's verb *implies* next to the tier the matching content *delivers*. A gap marker (↓, ✓, — for no matching activity) makes the misalignment scannable without interpreting bars or percentages.\n\n{{{alignment}}}\n\nThis is the working-tool cousin of the Bloom's pyramid — the pyramid is the iconic image, the matrix is what an ID actually audits against. Use it when the lesson has real objectives to compare against; use the pyramid when you just need a single-tier ornament.\n\n---\n\nThat's the full marker inventory. The feedback overlay, Bloom's coverage bars, and undo stack are still panel-only affordances (not yet marker-driven).",
       },
     ],
   },
@@ -129,65 +104,16 @@ const RAW_SEED_CHATS: Chat[] = [
     messages: [],
   },
 
-  // ── Demo: Course-Level Review (Closing slide) ─────────────────────────
+  // ── Scenario 3: Course-Level Review (Closing slide) ───────────────────
+  // Empty by default — the inline "Start demo" button plays the script from
+  // SCRIPTED_DEMO_MESSAGES['demo-closing'] below, one turn at a time. The
+  // right panel opens to the course view (COURSE_LEVEL_CHAT_IDS).
   {
     id: 'demo-closing',
     title: 'Scenario 3: Course review',
-    messages: [
-      {
-        role: 'user',
-        text: "I've got first drafts of all five lessons done. Can you do a course-level pass? I want to make sure the lessons actually reinforce each other and hit the course objectives — not just the per-lesson ones.",
-      },
-      {
-        role: 'assistant',
-        text: "## Course-level review\n\nZooming out from the per-lesson view, three patterns surface that no single lesson can tell you about.\n\n### 1. Cognitive coverage plateaus at Apply\n\nAt the course level, Bloom's isn't about *which tier a single section sits at* — it's about **how the whole course is distributed** across tiers. Aggregated across all five lessons, your course is heavy at **Remember**, solid at **Understand**, and softens at **Apply**. **Analyze** and **Evaluate** live in a single lesson each; **Create** is essentially absent. The coverage map is below.\n\nThat's a mismatch with the course-level objectives. Three of the five are Apply-tier (*interview coworkers*, *apply a compressed design-thinking process*, *build custom tools on top of Claude*) and one is Evaluate-tier (*measure adoption and decide when to iterate, pivot, or sunset*). A learner finishing the course in its current shape will be able to **describe** the practices, not **make decisions** about them.\n\n### 2. Objective 2 is orphaned to a single lesson\n\n*Apply a compressed design-thinking process to scope a tool before building it* lives almost entirely in Lesson 2. Lessons 3–5 don't reference it. By the time a learner builds their custom tool in Lesson 3, the design-thinking scaffolding from Lesson 2 isn't in the room anymore.\n\nIt needs a callback: one decision point in each subsequent lesson that says *\"pause — what would the design-thinking frame say about this choice?\"* Same objective, reinforced across the arc.\n\n### 3. The wall-of-text pattern repeats across lessons\n\nLesson 1's empathy-mapping section and Lesson 3's system-prompt section share the same structural problem — one dense paragraph doing four jobs. You already fixed it in Lesson 1 with the three-beat reshape (*concept, example, practice*). Lesson 3 hasn't been reshaped yet. Same pattern, same fix.\n\n---\n\nThe per-lesson reviews caught per-lesson issues. The course-level view catches the **shape** of the whole course — which objectives pull weight, where cognitive levels cluster, which patterns repeat so consistently that fixing them one lesson at a time would be slow.\n\nWant to start with the orphaned objective (biggest lift on learner outcomes) or the Lesson 3 reshape (quickest to ship)?",
-      },
-    ],
+    messages: [],
   },
 
-  // ── Non-demo seed chats ───────────────────────────────────────────────
-  {
-    id: 'c1',
-    title: 'Naming my sourdough starter',
-    messages: [
-      {
-        role: 'user',
-        text: "I need a name for my sourdough starter. It's very bubbly and slightly judgmental.",
-      },
-      {
-        role: 'assistant',
-        text: "A judgmental starter deserves a name with gravitas. Some options:\n\n**The Classics**\nBread Pitt. Clint Yeastwood. Dough Malone.\n\n**The Aristocrats**\nLord Crumbsworth. The Dowager Loafess. Sir Rises-a-Lot.\n\n**The Unhinged**\nGluten Tag. The Thing in the Jar. Kevin.\n\nGiven the bubbly-yet-judgmental energy, I'd lean toward **The Dowager Loafess**. She's seen things. She has opinions about your feeding schedule. She will outlive you.",
-      },
-    ],
-  },
-  {
-    id: 'c2',
-    title: 'Convince my cat to respect me',
-    messages: [
-      {
-        role: 'user',
-        text: 'How do I convince my cat that I am, in fact, the one in charge here?',
-      },
-      {
-        role: 'assistant',
-        text: 'I admire the ambition, but I should be honest with you: you are not going to win this one.\n\n**What you can try**\nControl the food. Be the sole dispenser of treats. Establish a routine so ironclad that the cat associates your presence with reliable comfort rather than chaos.\n\n**What will actually happen**\nThe cat will accept the food, interpret the routine as the bare minimum expected of a servant, and continue to knock things off tables while maintaining direct eye contact.\n\n**The healthy reframe**\nYou are not in charge. You are a beloved and well-compensated employee. The benefits are excellent (warmth, purring, the occasional dead moth as a bonus). Lean into it.',
-      },
-    ],
-  },
-  {
-    id: 'c3',
-    title: 'Time travel etiquette',
-    messages: [
-      {
-        role: 'user',
-        text: "If I invented a time machine, what's the first thing I should NOT do?",
-      },
-      {
-        role: 'assistant',
-        text: "Excellent instinct to ask about the don'ts first. In rough order of catastrophe:\n\n**Do not meet yourself.** Best case: deeply awkward. Worst case: the universe folds itself into a paradox and files a complaint.\n\n**Do not bring back a snack.** You will introduce a 14th-century bacterium to a population with no immunity and become history's most confusing villain.\n\n**Do not try to fix anything.** Every time traveler thinks they'll just nudge one small thing. Three nudges later, the Library of Alexandria is a water park.\n\n**Do not tell anyone.** Not because of timeline integrity — because everyone will immediately ask you to go back and buy Bitcoin, and you'll never hear the end of it.\n\nSafest first trip: go twenty minutes into the future, confirm the machine has a return function, come straight back. Boring, but you'll still exist.",
-      },
-    ],
-  },
 ]
 
 export const SEED_CHATS: Chat[] = withLessonSnapshots(RAW_SEED_CHATS)
@@ -233,7 +159,7 @@ const RAW_SCRIPTED_DEMO_MESSAGES: Record<string, Message[]> = {
     },
     {
       role: 'assistant',
-      text: "## Bloom's pass\n\nYou're right. The objectives promise Apply. The sections are executing Remember. The whole review is about closing that gap.\n\n{{{bloom-coverage}}}\n\n**Why it reads this way.** When you're deep in a new API surface, it's natural to start by describing what's in the box — the install command, the `system` parameter, the JSON format. That's a feature tour. It's the writing stance of someone who wants to be complete about what the tool does. The stance a learner needs is closer to *\"here's the decision you'll have to make, and here's how Claude helps you make it.\"* Same facts, different verb. Once you see the pattern, every section that reads like documentation is a candidate for the same reshape.\n\nI've turned the Bloom's overlay on in the right panel — each section is tagged so the plateau shape is legible at a glance: spine sections at Remember, step tabs inheriting it, dropdowns all reference material. Two edits are ready now, both on the spine of the lesson.\n\n### 1. The opener tells instead of asks\n\n{{{card:diff:section-1}}}\n\nRight now Section 1 opens with \"First, install the Anthropic SDK.\" That's a Remember instruction. The edit reframes it as a design checkpoint: name the user, name the job, name what good output looks like, write those at the top of the file, *then* install. Install still happens — but every later decision gets judged against the three answers. Same install command, Apply-tier framing around it.\n\n### 2. System prompts are documented, not taught\n\n{{{card:diff:section-2}}}\n\n\"Make your system prompt as detailed as you want\" tells the learner nothing actionable. The replacement gives a three-component rubric (who the user is, what they're trying to accomplish, what a good response looks like) and asks the learner to draft against it. A read-it-out-loud check closes the loop. Now the learner ends the section with their own system prompt, not just an understanding of where the parameter goes.\n\n---\n\nClick through to turn 2 and I'll apply both edits, then pull the structured-outputs section — it's the same pattern.",
+      text: "## Bloom's pass\n\nYou're right. The objectives promise Apply. The sections are executing Remember. The whole review is about closing that gap — and it's most legible row by row:\n\n{{{alignment}}}\n\nFour of your five objectives use Apply-tier verbs (*write, use, implement, deploy*) but land at Remember or Understand in the content. The only row that lines up is the setup objective, which is legitimately Remember-tier. Every other row is the same shape: a design decision on paper, a step-by-step recipe in the content.\n\n**Why it reads this way.** When you're deep in a new API surface, it's natural to start by describing what's in the box — the install command, the `system` parameter, the JSON format. That's a feature tour. It's the writing stance of someone who wants to be complete about what the tool does. The stance a learner needs is closer to *\"here's the decision you'll have to make, and here's how Claude helps you make it.\"* Same facts, different verb. Once you see the pattern, every section that reads like documentation is a candidate for the same reshape.\n\nI've turned the Bloom's overlay on in the right panel — each section is tagged so the plateau shape is legible at a glance: spine sections at Remember, step tabs inheriting it, dropdowns all reference material. Two edits are ready now, both on the spine of the lesson.\n\n### 1. The opener tells instead of asks\n\n{{{card:diff:section-1}}}\n\nRight now Section 1 opens with \"First, install the Anthropic SDK.\" That's a Remember instruction. The edit reframes it as a design checkpoint: name the user, name the job, name what good output looks like, write those at the top of the file, *then* install. Install still happens — but every later decision gets judged against the three answers. Same install command, Apply-tier framing around it.\n\n### 2. System prompts are documented, not taught\n\n{{{card:diff:section-2}}}\n\n\"Make your system prompt as detailed as you want\" tells the learner nothing actionable. The replacement gives a three-component rubric (who the user is, what they're trying to accomplish, what a good response looks like) and asks the learner to draft against it. A read-it-out-loud check closes the loop. Now the learner ends the section with their own system prompt, not just an understanding of where the parameter goes.\n\n---\n\nClick through to turn 2 and I'll apply both edits, then pull the structured-outputs section — it's the same pattern.",
     },
     {
       role: 'user',
@@ -250,6 +176,32 @@ const RAW_SCRIPTED_DEMO_MESSAGES: Record<string, Message[]> = {
     {
       role: 'assistant',
       text: "## Post-edit Bloom's pass\n\n{{{bloom-coverage:after}}}\n\nSections 1, 2, and 3 have moved to Apply. Each one now forces a decision before code runs: name the user and the job before install, draft a system prompt against a three-component rubric, decide the output shape from the consuming code before asking for JSON. The verb on the spine now matches the verb on the objectives.\n\n### What's still unresolved\n\n{{{card:tabs-1}}}\n\nThe step tabs haven't moved. All four are still \"do what I did\" — the verb is Remember even though the surrounding sections are now Apply. Cheapest lift: convert Step 2 from **\"Write Your Prompt\"** (follow the template) to **\"Design Your Prompt\"** (make a call about your own tool). Single-word change, Apply-level payoff, keeps the code where it is.\n\nWant me to draft that edit, or call it done for this pass?",
+    },
+  ],
+  'demo-closing': [
+    {
+      role: 'user',
+      text: "I've got first drafts of all five lessons done. Can you do a course-level pass? I want to make sure the lessons actually reinforce each other and hit the course objectives — not just the per-lesson ones.",
+    },
+    {
+      role: 'assistant',
+      text: "## Course-level pass\n\nZooming out from per-lesson review, three patterns surface that no single lesson can tell you about. The first one only shows up when you map the lessons to the workflow a learner actually walks through.\n\n### 1. The arc has a front-end gap\n\n{{{journey}}}\n\nFive of six stages are covered, one lesson per stage — clean arc. The gap is at **Notice**. The course assumes learners arrive with a candidate problem already in hand. For an opt-in learner that might be fine. For a CS specialist whose manager said *\"do this training,\"* the assumption is invisible — they hit Lesson 1 ready to research users for a tool that doesn't exist yet, and bounce.\n\nThis isn't a missing lesson. It's a missing 90 seconds in the Lesson 1 intro: *\"Before you research, you need a candidate problem. Here are three ways to surface one.\"* Same arc, closed front door.\n\n### 2. Objective 2 is orphaned to a single lesson\n\n*Apply a compressed design-thinking process to scope a tool before building it* lives almost entirely in Lesson 2. Lessons 3–5 don't reference it. By the time a learner hits the build in Lesson 3, the design-thinking scaffolding isn't in the room anymore.\n\nIt needs a callback — one decision point in each subsequent lesson that says *\"pause, what would the design-thinking frame say about this choice?\"* Same objective, reinforced across the arc.\n\n### 3. Cognitive coverage plateaus at Apply\n\nAt the course level, Bloom's isn't about *which tier a single section sits on* — it's about **how the whole course is distributed**. Aggregated across all five lessons your course is heavy at Remember, solid at Understand, and softens at Apply. Analyze and Evaluate each live in one lesson; Create is essentially absent.\n\nThat's a mismatch with the stated objectives. Three of the five are Apply-tier (*interview coworkers*, *apply design thinking*, *build custom tools*), one is Evaluate-tier (*measure adoption, decide to keep or sunset*). A learner finishing as drafted will be able to **describe** the practices, not **make decisions** about them.\n\n---\n\nWhere do you want to start? The Notice gap is cheapest (intro addition, no restructure). The orphaned objective is the biggest lift on outcomes. The Bloom's plateau is the deepest change but resets the ceiling on everything above it.",
+    },
+    {
+      role: 'user',
+      text: "the notice gap is interesting — i figured if someone signs up they already have something in mind. walk me through why that's actually a problem.",
+    },
+    {
+      role: 'assistant',
+      text: "Fair read for opt-in learners. For mandated ones it falls apart.\n\nThe Notice stage on the arc isn't *having a problem* — it's **seeing** friction as a candidate for tooling. Those are different moves. A senior CS rep who's patched the same Zendesk workflow with sticky notes for three years has plenty of problems. They don't see them as tool-shaped — they see them as *\"the job.\"* They arrive at Lesson 1 not with a candidate but with resignation.\n\n### What this does to the rest of the arc\n\n- **Lesson 1** asks them to *understand the people they build for*. With no candidate tool in mind, they don't know which coworkers' workflows are relevant. They interview broadly, surface everything, build no intuition.\n- **Lesson 2** asks them to *frame the problem*. You can't frame nothing. They either invent a toy problem (wrong user) or abandon the lesson.\n- **Lessons 3–5** compound from there.\n\nEvery lesson after 1 assumes a concrete problem. If the learner never lands one at Notice, the arc never starts.\n\n### Lightweight fix, fits in the Lesson 1 intro\n\nThree prompts before any instruction:\n\n1. **Friction you've noticed.** Something you've patched around more than once.\n2. **Friction coworkers vent about.** Watercooler complaints that always come back.\n3. **Friction leadership has flagged.** A metric or anecdote from all-hands or QBRs.\n\nPick one. Write two sentences. That's your candidate problem. Every exercise across the remaining four lessons lands on *this specific problem,* not a hypothetical.\n\nThat turns the course from a tour through techniques into one compounding project. Want me to draft the intro section, then come back to the Bloom's plateau?",
+    },
+    {
+      role: 'user',
+      text: "yes draft it. then come back to the plateau — i want to see which sections would need to lift.",
+    },
+    {
+      role: 'assistant',
+      text: "## Draft: Lesson 1 \"Before you begin\"\n\nSitting above the current \"Understanding the People You Build For\" opener:\n\n> **Before you begin — pick a candidate problem.**\n>\n> This course works best when every exercise points at one real tool you might build. So before anything else, name what that tool might be.\n>\n> Three places to look:\n>\n> 1. **Something you've patched around.** A workflow where you've built a spreadsheet, saved reply, or ritual to compensate for a system that doesn't quite work.\n> 2. **Something coworkers vent about.** A complaint that comes back week after week.\n> 3. **Something leadership has flagged.** A metric or anecdote from all-hands or QBRs.\n>\n> Pick one. Write two sentences at the top of a notes doc: *\"Who has this friction. What does it cost them.\"* That's your candidate. You'll sharpen it through Lessons 1–2, build for it in Lessons 3–5, and ship it to whoever has the friction by the end.\n\n130 words, sits before the learning objectives, and gives the rest of the course something to grip.\n\n---\n\n## Bloom's plateau — where the lift goes\n\nCoverage widget is rendered below. Three sections carry most of the Remember weight across the course:\n\n- **Lesson 1, Empathy Mapping & User Interviews** — methods described, not practiced. Fixed by the three-beat reshape we've already walked through.\n- **Lesson 3, Sections 1 and 2** — feature tour of the SDK and system prompts. Already reshaped into Apply-tier framing.\n- **Lesson 5, Measuring Adoption** — lists the metrics to watch but never asks the learner to *decide* from them. Right now it's Evaluate-adjacent. One worked decision (*\"here's a two-week usage curve; keep, iterate, or sunset?\"*) moves it to Evaluate proper.\n\nLand those three and the coverage map reshapes on its own — Apply becomes the spine, Evaluate gets a real home, and the course objectives stop outrunning the content.",
     },
   ],
 }

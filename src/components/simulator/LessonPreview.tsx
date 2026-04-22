@@ -7,7 +7,7 @@ import { Eye, Layers, PenLine, BookOpen, ChevronRight, FileText, Search, Undo2, 
 import type { BloomLevel } from '@/lib/types/blooms'
 import type { Lesson, LessonBlock, SectionFeedback } from '@/lib/types/lesson'
 import { useLesson } from '@/lib/lesson-context'
-import { renderEditsInline } from '@/lib/format-edits'
+import { renderEditsInline, applyEditsToHtml } from '@/lib/format-edits'
 import { CourseView } from './CourseView'
 import { LandingSection } from './landing-section'
 import { RichTextViewer } from './richtext'
@@ -51,9 +51,14 @@ const BLOOMS_COLORS: Record<BloomLevel, { bg: string; border: string; text: stri
 type LessonPreviewProps = ComponentProps<'aside'> & {
   lesson: Lesson
   chatId: string
+  /** Ids of blocks/items that Claude has referenced in chat so far. When
+   *  non-null, the feedback overlay only renders edits for ids in this set —
+   *  everything else stays clean even in feedback mode. `null` means no
+   *  gating (unrestricted — normal non-demo behavior). */
+  revealedFeedbackIds?: Set<string> | null
 }
 
-export function LessonPreview({ lesson, chatId, style, ...props }: LessonPreviewProps) {
+export function LessonPreview({ lesson, chatId, revealedFeedbackIds = null, style, ...props }: LessonPreviewProps) {
   const { course, lessons, lessonIndex, view, overlayByChat, panelOpenByChat, canUndo, actions } = useLesson()
   const panelOpen = panelOpenByChat[chatId] ?? false
   const overlay = overlayByChat[chatId] ?? 'preview'
@@ -68,16 +73,11 @@ export function LessonPreview({ lesson, chatId, style, ...props }: LessonPreview
   const showFeedback = overlay === 'feedback'
   const hasContent = lesson.name || lesson.blocks.length > 0
 
-  /** Replace every occurrence of each edit's `original` with its `replacement`.
-   *  Case-insensitive first match, same discipline as the richtext path. */
-  const applyEditsToString = (source: string, edits: SectionFeedback['edits']): string => {
-    let out = source
-    for (const edit of edits) {
-      const escaped = edit.original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      out = out.replace(new RegExp(escaped, 'i'), edit.replacement)
-    }
-    return out
-  }
+  /** Replace each edit's `original` with its `replacement`. Uses the tag-aware
+   *  matcher so HTML-wrapped content still applies when the AI emitted a plain-
+   *  text original. */
+  const applyEditsToString = (source: string, edits: SectionFeedback['edits']): string =>
+    applyEditsToHtml(source, edits)
 
   const applyFeedback = (id: string) => {
     // Richtext block path.
@@ -393,7 +393,7 @@ export function LessonPreview({ lesson, chatId, style, ...props }: LessonPreview
               {lesson.name && <LandingSection title={lesson.name} paragraph={lesson.short_description} />}
               <div style={{ padding: '20px 24px 60px' }}>
                 {lesson.objectives.length > 0 && (
-                  <div style={{ marginBottom: 24 }}>
+                  <div data-field="objectives" style={{ marginBottom: 24, borderRadius: 10 }}>
                     <ObjectivesList objectives={lesson.objectives} />
                   </div>
                 )}
@@ -405,6 +405,7 @@ export function LessonPreview({ lesson, chatId, style, ...props }: LessonPreview
                       block={block}
                       showBlooms={showBlooms}
                       showFeedback={showFeedback}
+                      revealedFeedbackIds={revealedFeedbackIds}
                       onApplyFeedback={applyFeedback}
                       onDismissFeedback={dismissFeedback}
                     />
@@ -484,16 +485,29 @@ function BlockRenderer({
   block,
   showBlooms,
   showFeedback,
+  revealedFeedbackIds,
   onApplyFeedback,
   onDismissFeedback,
 }: {
   block: LessonBlock
   showBlooms: boolean
   showFeedback: boolean
+  revealedFeedbackIds: Set<string> | null
   onApplyFeedback: (blockId: string) => void
   onDismissFeedback: (blockId: string) => void
 }) {
+  // Helpers: when revealedFeedbackIds is null, gating is off (everything is
+  // revealed). Otherwise only ids in the set count as revealed.
+  const isBlockRevealed = (blockId: string) =>
+    revealedFeedbackIds === null || revealedFeedbackIds.has(blockId)
+  const isItemRevealed = (blockId: string, itemId: string) =>
+    revealedFeedbackIds === null ||
+    revealedFeedbackIds.has(blockId) ||
+    revealedFeedbackIds.has(itemId)
+
   if (block.kind === 'richtext') {
+    const blockRevealed = isBlockRevealed(block.id)
+    const showBlockFeedback = showFeedback && blockRevealed
     return (
       <div
         data-field={block.id}
@@ -502,7 +516,7 @@ function BlockRenderer({
         <BloomsWrapper level={block.blooms_level} note={block.blooms_note} show={showBlooms}>
           <RichTextViewer
             htmlContent={
-              showFeedback && block.feedback
+              showBlockFeedback && block.feedback
                 ? renderEditsInline(block.content, block.feedback.edits)
                 : block.content
             }
@@ -510,7 +524,7 @@ function BlockRenderer({
           />
           <FeedbackBlock
             feedback={block.feedback}
-            show={showFeedback}
+            show={showBlockFeedback}
             onApply={() => onApplyFeedback(block.id)}
             onDismiss={() => onDismissFeedback(block.id)}
           />
@@ -529,7 +543,13 @@ function BlockRenderer({
           <TabbedGallery
             tabs={block.items.map((t) => t.heading)}
             contents={block.items.map((t) => t.content)}
-            tabEdits={showFeedback ? block.items.map((t) => t.feedback?.edits) : undefined}
+            tabEdits={
+              showFeedback
+                ? block.items.map((t) =>
+                    isItemRevealed(block.id, t.id) ? t.feedback?.edits : undefined,
+                  )
+                : undefined
+            }
           />
         </BloomsWrapper>
       </div>
@@ -567,8 +587,9 @@ function BlockRenderer({
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {block.items.map((d) => {
+              const itemRevealed = isItemRevealed(block.id, d.id)
               const edits = d.feedback?.edits ?? []
-              const showEdits = showFeedback && edits.length > 0
+              const showEdits = showFeedback && edits.length > 0 && itemRevealed
               return (
                 <div key={d.id} data-field={d.id} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                   <div
@@ -583,18 +604,20 @@ function BlockRenderer({
                       <ExpandableDropdown
                         headingHtml={renderEditsInline(d.heading, edits)}
                         contentHtml={renderEditsInline(d.content, edits)}
-                        defaultExpanded
+                        forceExpanded
+                        footer={
+                          <FeedbackBlock
+                            feedback={d.feedback}
+                            show
+                            onApply={() => onApplyFeedback(d.id)}
+                            onDismiss={() => onDismissFeedback(d.id)}
+                          />
+                        }
                       />
                     ) : (
                       <ExpandableDropdown heading={d.heading} content={d.content} />
                     )}
                   </div>
-                  <FeedbackBlock
-                    feedback={d.feedback}
-                    show={showFeedback}
-                    onApply={() => onApplyFeedback(d.id)}
-                    onDismiss={() => onDismissFeedback(d.id)}
-                  />
                 </div>
               )
             })}
@@ -827,6 +850,18 @@ function FeedbackBlock({
 }) {
   if (!feedback || !show) return null
 
+  // Apply only makes sense when there's a concrete change to apply. If the AI
+  // dropped commentary without proposing an edit, the user should only see
+  // Dismiss — there's nothing to accept, just acknowledge.
+  const hasEdits = feedback.edits.length > 0
+
+  // The explanation echoes the first edit's reason when there's exactly one
+  // edit (see `attachEditsAsFeedback` in edit-parser.ts). Suppress the dup so
+  // the user doesn't read the same sentence twice.
+  const showExplanation = Boolean(
+    feedback.explanation && (feedback.edits.length !== 1 || feedback.explanation !== feedback.edits[0].reason),
+  )
+
   return (
     <div style={{
       marginTop: 12,
@@ -840,10 +875,10 @@ function FeedbackBlock({
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
         <div style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'rgb(115, 114, 108)' }}>
-          Feedback
+          {hasEdits ? 'Feedback' : 'Note'}
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-          {onApply && (
+          {hasEdits && onApply && (
             <FeedbackActionButton
               icon={Check}
               label="Apply"
@@ -867,11 +902,13 @@ function FeedbackBlock({
           )}
         </div>
       </div>
-      <div style={{ fontSize: 14, lineHeight: 1.6, color: 'rgb(41, 41, 38)' }}>
-        <Markdown remarkPlugins={[remarkGfm]} components={feedbackMarkdownComponents}>{feedback.explanation}</Markdown>
-      </div>
-      {feedback.edits.length > 0 && (
-        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {showExplanation && (
+        <div style={{ fontSize: 14, lineHeight: 1.6, color: 'rgb(41, 41, 38)' }}>
+          <Markdown remarkPlugins={[remarkGfm]} components={feedbackMarkdownComponents}>{feedback.explanation}</Markdown>
+        </div>
+      )}
+      {hasEdits && (
+        <div style={{ marginTop: showExplanation ? 10 : 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
           {feedback.edits.map((edit, i) => (
             <div key={i} style={{ fontSize: 13, lineHeight: 1.5, color: 'rgb(61, 61, 58)', display: 'flex', gap: 6 }}>
               <span style={{ fontWeight: 600, color: 'rgb(61, 61, 58)', flexShrink: 0 }}>Edit {i + 1}:</span>

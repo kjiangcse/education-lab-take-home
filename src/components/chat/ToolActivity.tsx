@@ -24,6 +24,18 @@ function labelFor(name: string, input: unknown): string {
       return 'Reading course catalog'
     case 'get_course':
       return 'Reading course'
+    case 'audit_attributes':
+      return 'Auditing lesson attributes'
+    case 'audit_blooms_alignment':
+      return "Auditing Bloom's alignment"
+    case 'audit_content_structure':
+      return 'Auditing content structure'
+    case 'audit_user_journey':
+      return 'Auditing learner journey'
+    case 'audit_assessment':
+      return 'Auditing assessment'
+    case 'assemble_feedback':
+      return 'Assembling feedback'
     default:
       return name
   }

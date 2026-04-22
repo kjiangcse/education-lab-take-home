@@ -100,6 +100,13 @@ function isDemoChatId(chatId: string): boolean {
   return chatId.startsWith('demo-')
 }
 
+/** Drop any demo-chat entries from a per-chat map. Used when hydrating or
+ *  persisting overlay / panel-open state, since demo chats reset to seed on
+ *  every reload and their UI selections should reset with them. */
+function stripDemoEntries<T>(obj: Record<string, T>): Record<string, T> {
+  return Object.fromEntries(Object.entries(obj).filter(([id]) => !isDemoChatId(id)))
+}
+
 /** Clone a lesson with every block/item-level `feedback` entry removed. Used
  *  to derive the initial state for a non-demo chat: the sample data ships
  *  with seeded feedback for the scripted demos, and a fresh live chat
@@ -172,24 +179,29 @@ export function LessonProvider({ children }: { children: ReactNode }) {
   const lessonIndex = lessons.findIndex((l) => l.id === lessonId)
   const lesson = lessons[lessonIndex] ?? lessons[0]
 
-  // Hydrate per-chat maps from localStorage after mount.
+  // Hydrate per-chat maps from localStorage after mount. Demo chats are
+  // ephemeral — the chat content resets to seed on every reload, so the
+  // overlay + panel-open selections should reset with it. Filter out any
+  // demo-chat entries during hydration so a scenario that was last viewed
+  // on Feedback or Bloom's comes back up on Preview.
   useEffect(() => {
     try {
       const overlayRaw = localStorage.getItem(OVERLAY_STORAGE_KEY)
-      if (overlayRaw) setOverlayByChat(JSON.parse(overlayRaw))
+      if (overlayRaw) setOverlayByChat(stripDemoEntries(JSON.parse(overlayRaw)))
     } catch { /* ignore */ }
     try {
       const panelRaw = localStorage.getItem(PANEL_STORAGE_KEY)
-      if (panelRaw) setPanelOpenByChat(JSON.parse(panelRaw))
+      if (panelRaw) setPanelOpenByChat(stripDemoEntries(JSON.parse(panelRaw)))
     } catch { /* ignore */ }
   }, [])
 
-  // Persist per-chat maps.
+  // Persist per-chat maps. Strip demo entries on write too so in-session
+  // overlay selections on a demo chat don't linger after a reload.
   useEffect(() => {
-    try { localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(overlayByChat)) } catch { /* ignore */ }
+    try { localStorage.setItem(OVERLAY_STORAGE_KEY, JSON.stringify(stripDemoEntries(overlayByChat))) } catch { /* ignore */ }
   }, [overlayByChat])
   useEffect(() => {
-    try { localStorage.setItem(PANEL_STORAGE_KEY, JSON.stringify(panelOpenByChat)) } catch { /* ignore */ }
+    try { localStorage.setItem(PANEL_STORAGE_KEY, JSON.stringify(stripDemoEntries(panelOpenByChat))) } catch { /* ignore */ }
   }, [panelOpenByChat])
 
   const ensureChatState = useCallback((chatId: string) => {

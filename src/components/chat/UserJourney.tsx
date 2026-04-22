@@ -83,7 +83,7 @@ export function UserJourney({
       style={{
         border: `1px solid ${DIVIDER}`,
         borderRadius: 10,
-        background: 'rgba(247, 246, 242, 0.5)',
+        background: 'rgba(255, 254, 252, 0.85)',
         padding: '16px 18px 14px',
         margin: '10px 0',
       }}

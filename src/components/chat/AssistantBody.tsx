@@ -2,11 +2,13 @@
 
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { AlignmentMatrix } from './AlignmentMatrix'
 import { BloomTaxonomy } from './BloomTaxonomy'
 import { InlineCard, type InlineCardKind } from './InlineCard'
 import { ToolPill, type ToolActivityEvent } from './ToolActivity'
 import { UserJourney } from './UserJourney'
 import { stripEditBlocks } from '@/lib/edit-parser'
+import { ALIGNMENT_BY_CHAT } from '@/lib/demo/alignment'
 import { BLOOM_COVERAGE_BY_CHAT } from '@/lib/demo/bloom-coverage'
 import type { BloomLevel } from '@/lib/types/blooms'
 import type { Lesson } from '@/lib/types/lesson'
@@ -43,15 +45,18 @@ type AssistantBodyProps = {
  *   {{{journey}}}                         — course-level learner-journey map
  *   {{{bloom-coverage}}}                  — Bloom's distribution/coverage widget
  *                                           (config resolved from chatId)
+ *   {{{alignment}}}                       — objective/content alignment matrix
+ *                                           (config resolved from chatId)
  *   [[error]] TEXT                        — error display
  */
 
-const ARTIFACT_REGEX = /\{\{\{bloom:(remember|understand|apply|analyze|evaluate|create)\}\}\}|\[\[bloom:(remember|understand|apply|analyze|evaluate|create)\]\]|\{\{\{card:diff:([a-z0-9-]+)\}\}\}|\{\{\{card:([a-z0-9-]+)(?::([a-z0-9,\-\s]+))?\}\}\}|\{\{\{tool:([^}]+)\}\}\}|\{\{\{(journey)\}\}\}|\{\{\{bloom-coverage(?::([a-z0-9-]+))?\}\}\}/g
+const ARTIFACT_REGEX = /\{\{\{bloom:(remember|understand|apply|analyze|evaluate|create)\}\}\}|\[\[bloom:(remember|understand|apply|analyze|evaluate|create)\]\]|\{\{\{card:diff:([a-z0-9-]+)\}\}\}|\{\{\{card:([a-z0-9-]+)(?::([a-z0-9,\-\s]+))?\}\}\}|\{\{\{tool:([^}]+)\}\}\}|\{\{\{(journey)\}\}\}|\{\{\{bloom-coverage(?::([a-z0-9-]+))?\}\}\}|\{\{\{(alignment)\}\}\}/g
 
 type Segment =
   | { kind: 'text'; text: string }
   | { kind: 'bloom'; level: BloomLevel }
   | { kind: 'bloom-coverage'; variant?: string }
+  | { kind: 'alignment' }
   | { kind: 'card'; cardKind: InlineCardKind; id: string; itemIds?: string[] }
   | { kind: 'tool'; id: string }
   | { kind: 'journey' }
@@ -63,13 +68,15 @@ function splitSegments(text: string): Segment[] {
   ARTIFACT_REGEX.lastIndex = 0
   while ((m = ARTIFACT_REGEX.exec(text)) !== null) {
     if (m.index > last) out.push({ kind: 'text', text: text.slice(last, m.index) })
-    const [full, bloomNew, bloomLegacy, diffId, cardId, itemFilter, toolId, journey, coverageVariant] = m
+    const [full, bloomNew, bloomLegacy, diffId, cardId, itemFilter, toolId, journey, coverageVariant, alignment] = m
     if (bloomNew || bloomLegacy) {
       out.push({ kind: 'bloom', level: (bloomNew || bloomLegacy) as BloomLevel })
     } else if (toolId) {
       out.push({ kind: 'tool', id: toolId })
     } else if (journey) {
       out.push({ kind: 'journey' })
+    } else if (alignment) {
+      out.push({ kind: 'alignment' })
     } else if (full.startsWith('{{{bloom-coverage')) {
       out.push({ kind: 'bloom-coverage', variant: coverageVariant || undefined })
     } else if (diffId) {
@@ -131,9 +138,13 @@ export function AssistantBody({ text: rawText, lesson, lessonId, chatId, toolEve
             return ev ? <ToolPill key={i} event={ev} /> : null
           }
           if (seg.kind === 'journey') return <UserJourney key={i} />
+          if (seg.kind === 'alignment') {
+            const cfg = chatId ? ALIGNMENT_BY_CHAT[chatId] : undefined
+            return cfg ? <AlignmentMatrix key={i} {...cfg} /> : null
+          }
           if (seg.kind === 'card') return <InlineCard key={i} kind={seg.cardKind} id={seg.id} itemIds={seg.itemIds} lesson={lesson} lessonId={lessonId} chatId={chatId} />
           return seg.text.trim() ? (
-            <Markdown key={i} components={markdownComponents}>
+            <Markdown key={i} remarkPlugins={[remarkGfm]} components={markdownComponents}>
               {seg.text}
             </Markdown>
           ) : null

@@ -11,12 +11,9 @@ type ChatHeaderProps = ComponentProps<'header'> & {
   panelOpen?: boolean
   /** Omit to hide the download button. Fires with the current chat + lesson state. */
   onDownload?: () => void
-  /** Omit to hide the Demo button. Each click advances the scripted scenario by one turn. */
-  onDemo?: () => void
-  demoDisabled?: boolean
 }
 
-export function ChatHeader({ className, title, onShare, onTogglePanel, panelOpen, onDownload, onDemo, demoDisabled, ...props }: ChatHeaderProps) {
+export function ChatHeader({ className, title, onShare, onTogglePanel, panelOpen, onDownload, ...props }: ChatHeaderProps) {
   return (
     <header
       className={cn(
@@ -55,11 +52,6 @@ export function ChatHeader({ className, title, onShare, onTogglePanel, panelOpen
       </div>
 
       <div className="flex items-center gap-2">
-        {onDemo && (
-          <Button variant="outline" onClick={onDemo} disabled={demoDisabled}>
-            Demo
-          </Button>
-        )}
         <Button variant="outline" onClick={onShare}>
           Share
         </Button>

@@ -16,11 +16,25 @@
  */
 
 import type { Course } from '@/lib/types/course'
-import type { Lesson } from '@/lib/types/lesson'
+import type { Lesson, SectionFeedback } from '@/lib/types/lesson'
 import type { Skill } from './index'
 
 function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+}
+
+/** Render the pending `feedback.edits` on a block/item, indented so they sit
+ *  visually under the parent. Kept compact — the AI only needs to know WHAT
+ *  is queued and WHY, not a full render preview. */
+function serializePendingFeedback(feedback: SectionFeedback | undefined, indent: string): string {
+  if (!feedback || feedback.edits.length === 0) return ''
+  let out = `${indent}pending_feedback:\n`
+  feedback.edits.forEach((e, i) => {
+    out += `${indent}  [${i}] original: "${e.original.slice(0, 120)}${e.original.length > 120 ? '…' : ''}"\n`
+    out += `${indent}      replacement: "${e.replacement.slice(0, 160)}${e.replacement.length > 160 ? '…' : ''}"\n`
+    out += `${indent}      reason: "${e.reason}"\n`
+  })
+  return out
 }
 
 export function serializeLessonForPrompt(lesson: Lesson, course: Course): string {
@@ -29,8 +43,13 @@ export function serializeLessonForPrompt(lesson: Lesson, course: Course): string
   out += `course: ${course.name}\n`
   out += `name: "${lesson.name}"\n`
   out += `short_description: "${lesson.short_description}"\n`
-  out += `duration: ${lesson.duration_minutes} min\n`
-  out += `blooms_profile: ${lesson.blooms_profile}\n\n`
+  out += `duration: ${lesson.duration_minutes} min\n\n`
+  // Intentionally NOT serializing `blooms_profile` (the stored lesson-level
+  // target). The AI is the Bloom's analyzer — it must infer the intended
+  // tier from the user's stated intent in the conversation and from the
+  // objectives' verbs, then produce ratings as OUTPUT. Passing the stored
+  // target as INPUT would let the AI parrot it back instead of assessing.
+  // Same rationale for stripping per-element `blooms_level` below.
 
   // Objectives — field path: objectives[i]
   out += `### objectives\n`
@@ -54,12 +73,14 @@ export function serializeLessonForPrompt(lesson: Lesson, course: Course): string
     if (block.kind === 'richtext') {
       if (block.label) out += `    ${block.id}.label: "${block.label}"\n`
       out += `    ${block.id}.content:\n      ${stripHtml(block.content).split('\n').join('\n      ')}\n`
+      out += serializePendingFeedback(block.feedback, '    ')
     } else if (block.kind === 'dropdowns') {
       out += `    items:\n`
       block.items.forEach((d) => {
         out += `      - id: ${d.id}\n`
         out += `        ${d.id}.heading: "${d.heading}"\n`
         out += `        ${d.id}.content: "${stripHtml(d.content)}"\n`
+        out += serializePendingFeedback(d.feedback, '        ')
       })
     } else if (block.kind === 'tabs') {
       out += `    items:\n`
@@ -67,6 +88,7 @@ export function serializeLessonForPrompt(lesson: Lesson, course: Course): string
         out += `      - id: ${t.id}\n`
         out += `        ${t.id}.heading: "${t.heading}"\n`
         out += `        ${t.id}.content: "${stripHtml(t.content)}"\n`
+        out += serializePendingFeedback(t.feedback, '        ')
       })
     } else if (block.kind === 'video') {
       if (block.label) out += `    ${block.id}.label: "${block.label}"\n`
