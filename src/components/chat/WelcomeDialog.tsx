@@ -126,14 +126,13 @@ export function WelcomeDialog() {
             marginBottom: 18,
           }}
         >
-          The intent on display is an{' '}
+          What this prototype aims to demonstrate is a{' '}
           <strong style={{ fontWeight: 600, color: 'rgb(20, 20, 19)' }}>
-            engagement pattern
+            learning loop
           </strong>{' '}
-          that turns the work itself into a learning opportunity. Reviewing a lesson with
-          Claude isn&apos;t just a quality check — the writer leaves each interaction a little
-          sharper at instructional design, so the act of authoring the course becomes the
-          path to getting better at authoring courses.
+          embedded in the work itself. The tool surfaces patterns in the writer&apos;s content,
+          explains why they matter, and hands the decision back. Each review session is a
+          learning opportunity, and the writer&apos;s capability compounds over time.
         </p>
 
         <div
