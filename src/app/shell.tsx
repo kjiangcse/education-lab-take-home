@@ -36,9 +36,16 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  // Hydration gate — the chat store's initial state is `[]`, but an effect
+  // rehydrates it from localStorage. If persisted chats exist, the Recents
+  // section would pop in fast enough to race hydration and trip React's
+  // mismatch warning. Deferring any localStorage-derived rendering until after
+  // mount keeps server and initial client renders identical.
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setCollapsed(localStorage.getItem(COLLAPSED_KEY) === '1')
+    setMounted(true)
   }, [])
 
   // The presenter pop-out opens in its own window and shouldn't inherit the
@@ -84,7 +91,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           ))}
         </SidebarSection>
 
-        {recents.length > 0 && (
+        {mounted && recents.length > 0 && (
           <SidebarSection label="Recents">
             {recents.map((chat) => (
               <SidebarChatItem
