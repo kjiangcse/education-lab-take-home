@@ -43,13 +43,13 @@ export const ALIGNMENT_BY_CHAT: Record<string, AlignmentConfig> = {
     summary:
       'Two objectives under-deliver and one has no matching activity. The framework section explains the steps but never asks the learner to apply, compare, or decide — the gap this lesson needs to close.',
   },
-  // Scenario 2 (demo-skills, Lesson 3). The alignment matrix is a stronger
+  // Scenario 2 (demo-blooms, Lesson 3). The alignment matrix is a stronger
   // opener than bloom-coverage here because the narrative is literally
   // objective-vs-content: the objectives promise Apply-tier verbs (write,
   // use, implement, deploy) while the spine reads like Remember-tier
   // documentation. One row per stated objective surfaces that mismatch
   // per-item, which the coverage widget can only hint at in aggregate.
-  'demo-skills': {
+  'demo-blooms': {
     title: 'Lesson 3 — Objective / content alignment',
     rows: [
       {

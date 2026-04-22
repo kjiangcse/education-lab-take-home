@@ -20,8 +20,8 @@ const COLLAPSED_KEY = 'education-labs:sidebar-collapsed'
  *  filter them out to avoid duplicate entries. */
 const DEMO_ENTRIES: { label: string; href: string }[] = [
   { label: 'Artifact Library', href: '/chat/demo-artifacts' },
-  { label: 'Scenario 1: Trim to learner tasks', href: '/chat/demo-structure' },
-  { label: "Scenario 2: Lift to Apply on Bloom's", href: '/chat/demo-skills' },
+  { label: 'Scenario 1: Trim to learner tasks', href: '/chat/demo-restructure' },
+  { label: "Scenario 2: Lift to Apply on Bloom's", href: '/chat/demo-blooms' },
   { label: 'Scenario 3: Course-level future state', href: '/chat/demo-closing' },
 ]
 

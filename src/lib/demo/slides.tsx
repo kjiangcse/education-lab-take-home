@@ -27,7 +27,7 @@ export type Slide = {
 
 /** Which seeded chat the live-demo slide embeds. Easy to swap if the demo
  *  narrative wants a different starting thread. */
-const LIVE_DEMO_CHAT_ID = 'demo-structure'
+const LIVE_DEMO_CHAT_ID = 'demo-restructure'
 
 // Placeholder content per slide — fill these in as the demo narrative firms up.
 // Keeping each slide self-contained (no cross-slide state) so they can be
@@ -139,10 +139,10 @@ export const SLIDES: Slide[] = [
     id: '5',
     title: 'Scenario 2',
     hidden: true,
-    // Full-bleed: renders the seeded demo-skills thread. ChatView injects a
+    // Full-bleed: renders the seeded demo-blooms thread. ChatView injects a
     // BloomTaxonomy distribution widget for this chatId so the inline
     // "weighted by percentage" view is visible as part of the walkthrough.
-    render: () => <ChatView chatId="demo-skills" redirectOnMissing={false} />,
+    render: () => <ChatView chatId="demo-blooms" redirectOnMissing={false} />,
   },
   {
     id: '6',

@@ -11,7 +11,7 @@ export const CANNED_RESPONSE =
   "This is a scaffolded response. The real Claude API isn't wired up yet — this text is just streaming in to demonstrate the thinking spark and the message flow.\n\nYou can replace this with a real API call, or edit the seeded chats in the source to prototype different conversation shapes."
 
 // IDs that get the right-side Lesson Studio panel
-export const LESSON_CHAT_IDS = new Set(['demo-artifacts', 'demo-structure', 'demo-skills'])
+export const LESSON_CHAT_IDS = new Set(['demo-artifacts', 'demo-restructure', 'demo-blooms'])
 
 /** Chats whose right-panel should open to the course view by default — used
  *  by the closing slide to demo what course-level review looks like. */
@@ -35,15 +35,15 @@ export const COURSE_LEVEL_CHAT_IDS = new Set(['demo-closing'])
  * obvious material to work with without being a dumpster fire.
  */
 export const DEMO_STARTER = {
-  message: "I want \"Workflow Integration & Adoption\" to land at Apply on Bloom's — learners should actually be choosing surfaces and diagnosing adoption failures, not just reading about them. Can you audit where each section actually sits on the taxonomy and tell me whether the lesson hits Apply, or if I'm fooling myself?",
+  message: "I want \"Workflow Integration & Adoption\" to land at Apply on Bloom's. Learners should actually be choosing surfaces and diagnosing adoption failures, not just reading about them. Can you audit where each section actually sits on the taxonomy and tell me if the lesson hits Apply?",
   lesson_id: 'l4',
 }
 
 // Map demo chat IDs to the lesson they review
 export const DEMO_CHAT_LESSON_MAP: Record<string, string> = {
   'demo-artifacts': 'l2', // artifact showcase — l2 has all section types + feedback
-  'demo-structure': 'l1', // knowledge dump faults
-  'demo-skills': 'l3',    // feature-describer faults
+  'demo-restructure': 'l1', // knowledge dump faults
+  'demo-blooms': 'l3',    // feature-describer faults
 }
 
 /**
@@ -88,18 +88,18 @@ const RAW_SEED_CHATS: Chat[] = [
 
   // ── Scenario 1: Structural Faults & Knowledge Dumps (Lesson 1) ────────
   // Empty by default — Demo button in ChatHeader plays the script from
-  // SCRIPTED_DEMO_MESSAGES['demo-structure'] below, one turn at a time.
+  // SCRIPTED_DEMO_MESSAGES['demo-restructure'] below, one turn at a time.
   {
-    id: 'demo-structure',
+    id: 'demo-restructure',
     title: 'Scenario 1',
     messages: [],
   },
 
   // ── Scenario 2: Bloom's Iteration (Lesson 3) ──────────────────────────
   // Empty by default — Demo button in ChatHeader plays the script from
-  // SCRIPTED_DEMO_MESSAGES['demo-skills'] below, one turn at a time.
+  // SCRIPTED_DEMO_MESSAGES['demo-blooms'] below, one turn at a time.
   {
-    id: 'demo-skills',
+    id: 'demo-blooms',
     title: 'Scenario 2',
     messages: [],
   },
@@ -126,7 +126,7 @@ export const SEED_CHATS: Chat[] = withLessonSnapshots(RAW_SEED_CHATS)
  * lesson even after the user applies edits in the right panel.
  */
 const RAW_SCRIPTED_DEMO_MESSAGES: Record<string, Message[]> = {
-  'demo-structure': [
+  'demo-restructure': [
     {
       role: 'user',
       text: "I'm currently working on \"Understanding the People You Build For\" and I just finished the first complete draft. I tried to be pretty thorough on the research methods. Could you take a look and tell me if it's ready to go or if I missed anything important?",
@@ -152,7 +152,7 @@ const RAW_SCRIPTED_DEMO_MESSAGES: Record<string, Message[]> = {
       text: "## Option A, applied\n\nYou don't need to cut anything to make this work. A paragraph isn't the knowledge; it's one shape the knowledge can take. The four facts currently in Empathy Mapping live more cleanly across three beats than in one block.\n\n### Beat 1, drafted\n\n{{{card:diff:section-2}}}\n\nThe textbook definition crosses out. A two-sentence instruction-style opener takes its place. Click the arrow to land in the section in context.\n\n### Beats 2 and 3 (new material)\n\nThese are additions, not edits. Neither exists in the lesson yet.\n\n- **Beat 2, worked example.** A filled-in empathy map for Priya, a support lead at a mid-market SaaS company. Real quotes, real behaviors, real frustrations from a 20-minute shadow session. The learner sees what \"good\" looks like before they try to make one.\n- **Beat 3, your turn.** A 15-minute observation exercise. The learner picks a coworker, watches them work, fills in the grid based on what they saw (not what they assumed), and brings it to the next review.\n\n### The same pattern applies to User Interviews\n\nBefore finalizing, worth naming that the next section has the same fault:\n\n{{{card:section-3}}}\n\nAlso one paragraph, also doing multiple jobs: enumerates three interview types, prescribes eight do's and four don'ts, then lists three follow-up steps. The three-beat reshape works here too:\n\n- **Beat 1.** A two-sentence framing of *why semi-structured interviews*, not three types.\n- **Beat 2.** One worked transcript showing a good follow-up in action.\n- **Beat 3.** A short exercise where the learner rewrites a leading question into a neutral one.\n\nThe Miro and FigJam mentions from Empathy Mapping would also move cleanly into a \"Tools\" dropdown beneath Beat 3, where optional reference material belongs.\n\n### Where would you like to land?\n\nThree concrete next moves, pick one:\n\n1. **Draft Beat 2 and Beat 3** for Empathy Mapping so you can see the full three-beat shape end to end.\n2. **Apply the same reshape to User Interviews** so both sections move together.\n3. **Pivot to the objectives.** Those unobservable verbs are the ceiling on what either section can actually teach.",
     },
   ],
-  'demo-skills': [
+  'demo-blooms': [
     {
       role: 'user',
       text: "i'm auditing my draft of \"Custom Claude Tools — From Prompt to Product\" before publishing. can you do a Bloom's pass on it? i have a feeling the objectives say Apply but the sections aren't actually doing Apply work.",

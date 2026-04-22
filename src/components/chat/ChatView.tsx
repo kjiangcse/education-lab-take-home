@@ -41,7 +41,7 @@ const NON_LESSON_IDS = new Set(['c1', 'c2', 'c3'])
  *  usual "jump to the newest message" behavior. Only applied on chat load —
  *  subsequent streaming / new messages still stick to the bottom so live
  *  interaction works normally. */
-const WALKTHROUGH_CHAT_IDS = new Set(['demo-structure', 'demo-skills', 'demo-closing'])
+const WALKTHROUGH_CHAT_IDS = new Set(['demo-restructure', 'demo-blooms', 'demo-closing'])
 
 export function ChatView({ chatId, redirectOnMissing = true }: ChatViewProps) {
   const router = useRouter()
@@ -194,33 +194,6 @@ export function ChatView({ chatId, redirectOnMissing = true }: ChatViewProps) {
                 onClick={() => advanceDemo(chatId)}
                 label={scriptedTurnsPlayed === 0 ? 'Start demo' : 'Next turn'}
               />
-            )}
-
-            {chatId === 'demo-skills' && scriptComplete && (
-              <ClaudeMessage>
-                <BloomTaxonomy
-                  title="Lesson 3: Custom Claude Tools — From Prompt to Product"
-                  level="remember"
-                  distribution={{
-                    remember: 100,
-                    understand: 75,
-                    apply: 30,
-                    analyze: 0,
-                    evaluate: 0,
-                    create: 0,
-                  }}
-                  notes={{
-                    remember: 'Every section names specific API methods, install commands, and config fields. Strong foundation.',
-                    understand: 'System prompts, structured outputs, and tool use each get a paragraph of explanation.',
-                    apply: 'Four follow-along steps. Learners reproduce the tool but never design one.',
-                    analyze: 'Missing. Objectives promise decision-making but no section asks learners to compare or decompose.',
-                    evaluate: 'Missing. No criteria for learners to judge whether their tool actually solved the problem.',
-                    create: 'Not required by stated objectives.',
-                  }}
-                  summary="PATTERN: Feature tour masquerading as a lesson. Content plateaus at Remember and Understand; the objectives call for Apply-tier decision-making that the content never scaffolds."
-                  defaultView="coverage"
-                />
-              </ClaudeMessage>
             )}
 
             {chatId === 'demo-closing' && scriptComplete && (

@@ -30,7 +30,7 @@ import type { ToolActivityEvent } from '@/components/chat/ToolActivity'
  *  Keyed by chat id → turn index (0-based) → list of block/item ids whose
  *  pending feedback should auto-apply before the turn's messages render. */
 const DEMO_AUTO_APPLY_BY_TURN: Record<string, Record<number, string[]>> = {
-  'demo-skills': {
+  'demo-blooms': {
     1: ['section-1', 'section-2'],
     2: ['section-3'],
   },
@@ -41,7 +41,7 @@ const DEMO_AUTO_APPLY_BY_TURN: Record<string, Record<number, string[]>> = {
  *  scenario 2 — the overlay switches programmatically when turn 1 fires so
  *  the per-section tags are visible alongside the coverage widget. */
 const DEMO_OVERLAY_BY_TURN: Record<string, Record<number, 'preview' | 'feedback' | 'blooms'>> = {
-  'demo-skills': {
+  'demo-blooms': {
     0: 'blooms',
   },
 }

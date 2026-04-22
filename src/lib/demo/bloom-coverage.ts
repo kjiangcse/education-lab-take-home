@@ -9,7 +9,7 @@
 import type { BloomArtifactData } from '@/lib/types/blooms'
 
 export const BLOOM_COVERAGE_BY_CHAT: Record<string, BloomArtifactData> = {
-  'demo-skills': {
+  'demo-blooms': {
     title: 'Lesson 3: Custom Claude Tools — From Prompt to Product',
     level: 'remember',
     notes: {
@@ -28,7 +28,7 @@ export const BLOOM_COVERAGE_BY_CHAT: Record<string, BloomArtifactData> = {
   // The distribution is computed live from the lesson snapshot attached to
   // the message, so after sections 1–3 flip to Apply, the bars reflect the
   // new shape without a hardcoded copy here.
-  'demo-skills:after': {
+  'demo-blooms:after': {
     title: 'Lesson 3: Custom Claude Tools — From Prompt to Product',
     level: 'apply',
     notes: {
